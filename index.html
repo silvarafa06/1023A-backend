@@ -5,57 +5,80 @@
     <title>Lista de Tarefas</title>
 </head>
 <body>
-    <h1>Minhas aulas</h1>
+    <h1>Lista de tarefas</h1>
 
-    <form id="formTarefa">
-        <input type="text" id="descricao" placeholder="Digite a tarefa" required>
+    <form id="form-tarefa">
+        <input type="text" id="tarefa" placeholder="Digite a tarefa">
         <button type="submit">Adicionar</button>
     </form>
+    <ul id="lista-tarefas"></ul>
 
-    <ul id="listaTarefas"></ul>
 <script>
-    async function buscaDados(){
-        const resposta = await fetch("http://localhost:8000/tarefas")
-        const ul = document.getElementById("listarTarefas")
-        ul.innerHTML = ""
+    async function buscaDados() {
+        const resposta = await fetch("http://localhost:8000/tarefas");
+        const ul = document.getElementById("lista-tarefas");
+        ul.innerHTML = "";
 
-        if(resposta.status === 200){
-            const dados = await resposta.json()
+        if (resposta.status === 200) {
+            const dados = await resposta.json();
             dados.forEach(tarefa => {
-                const li = document.createElement("li")
-                li.innerText = tarefa.descricao
-                li.style.marginBottom = "8px"
+                const li = document.createElement("li");
+                li.innerText = tarefa.descricao;
+                li.style.marginBottom = "8px";
 
-                // Botão de excluir
-                const botaoExcluir = document.createElement("button")
-                botaoExcluir.innerText = "Excluir"
+                const botaoExcluir = document.createElement("button");
+                botaoExcluir.innerText = "Excluir";
                 botaoExcluir.onclick = async () => {
-                    const confirmacao = confirm("Tem certeza que quer excluir?")
-                    if(confirmacao){
+                    const confirmacao = confirm("Tem certeza que quer excluir?");
+                    if (confirmacao) {
                         const res = await fetch(`http://localhost:8000/tarefas/${tarefa.id}`, {
                             method: "DELETE"
-                        })
-                        if(res.status === 200){
-                            buscaDados()
-                        }else{
-                            alert("Erro ao excluir a tarefa")
+                        });
+                        if (res.status === 200) {
+                            buscaDados();
+                        } else {
+                            alert("Erro ao excluir a tarefa");
                         }
                     }
-                }
+                };
 
-                li.appendChild(document.createTextNode(" ")) // espaço
-                li.appendChild(botaoExcluir)
-                ul.appendChild(li)
-            })
+                li.appendChild(document.createTextNode(" "));
+                li.appendChild(botaoExcluir);
+                ul.appendChild(li);
+            });
         } else {
-            alert("Erro ao buscar tarefas")
+            alert("Erro ao buscar tarefas");
         }
     }
 
-    buscaDados()
+    document.getElementById("form-tarefa").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const descricao = document.getElementById("tarefa").value.trim();
 
+        if (descricao === "") {
+            alert("A descrição não pode estar vazia");
+            return;
+        }
 
-        carregarTarefas();
-    </script>
+        const resposta = await fetch("http://localhost:8000/tarefas", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ descricao })
+        });
+
+        if (resposta.status === 201) {
+            document.getElementById("tarefa").value = "";
+            buscaDados();
+        } else {
+            alert("Erro ao adicionar tarefa");
+        }
+    });
+
+app.listen(8000, '127.0.0.1', () => {
+console.log("Servidor rodando em http://127.0.0.1:8000");
+});
+
+    buscaDados();
+</script>
 </body>
 </html>

@@ -1,138 +1,3 @@
-
-
-////22.13.16
-
-// /*find 
-
-// criar uma função que retorna verdadeirop quando é o meu 
-// elemento buscado quando nao for, retorne
-
-// const v = [1,2,3,4,5,6,6]
-// function callbacks(x:number){
-//     if(x==6){
-//        return true
-//     }
-//     else{
-//         return false
-//     }
-// }
-// let result = v.find(callbacks)
-
-// console.log(result)
-
-// import { forEachChild } from "typescript";
-
-// const v = [1,2,3,4,5,6,6]
-// function callbacks(x:number){
-//         return x<2
-// }
-// let result = v.filter(callbacks)
-
-// console.log(result)
-
-// type Pessoa = {
-//     id: number;
-//     nome: string;
-//     cpf: number; 
-//     idade?: string; 
-// };
-
-// const pessoas: Pessoa[] = [
-//     {
-//         id: 1,
-//         nome: "ted",
-//         cpf: 123,
-//         idade: "7 anos"
-//     },
-//     {
-//         id: 2,
-//         nome: "sidy",
-//         cpf: 345
-//     },
-//     {
-//         id: 3,
-//         nome: "apollo",
-//         cpf: 567,
-//         idade: "2 anos"
-//     },
-//     {
-//         id: 4,
-//         nome: "marrie",
-//         cpf: 789
-//     }, 
-//     {
-//         id: 5,
-//         nome: "fiote",
-//         cpf: 100,
-//         idade: "6 meses"
-//     }
-// ];
-
-// const p = pessoas.find((x)=>x.id==2);
-// console.log(p)
-
-// /* assincronidae -> nnao sincronizado -> paralelo 
-// nao ficar esperando algo que demore enquanto voce 
-// pode fazer outrar coisas
-
-// exemplo: enquanto esperamso o banco responder algo.
-// podemos realizar ago com javascript.
-
-// promessas
-// é um tipo de objeto do javascript que é o retono de 
-// uma funçao que nao é sincrona.
-// esse objeto chamado de promise quando a funçaçõ termina :
-// ele pode estar nos dois casos:
-// resolve -> quando a função executou corretamente.
-// reject -> quando algo deu errado
-// */
-
-// /*function demora():Promise<string>{
-//     let promise = new Promise<string>((resolve,reject)=>{
-//     setTimeout(
-//         function(){
-//             if(Math.random()<0.5){
-//                 resolve("dados!")
-//             }
-//             else{
-//                 reject("Ma Hoy, mas nao funciona né!")
-//             }
-//         },
-//         800
-//     )
-//  });
-//  return promise
-// }
-// console.log("executa algo antes")
-// const resultado = demora()
-// resultado
-// .then((resultadoEspera)=>{console.log(resultadoEspera)})
-// .catch((resultadoEspera)=>{console.log("Catch "+resultadoEspera)})
-// console.log("executa algo depois") 
-
-// //.then        => entao    
-// // .catch       =>capturar
-
-// /* await async
-// 2017 javascript trouxe esse novo conceito de awaIT E async 
-// await > é pra voce ficar esperando algo que é assincrono(async)
-// nao podemos ultilizar await sem ser em uma funcao assincrona (async)
-// */
-
-// async function aux(){
-//     try{
-//         const resultado = await demora()
-//     console.log("Resultado await: "+resultado)
-//     }
-//     catch(erro){
-//         console.log("ERRO TRY/CATCH: "+erro)
-//     }
-// }
-// aux()
-
-//import { ConnectionOptions } from "mysql2";
-
-
 import fastify from 'fastify';
 import cors from '@fastify/cors';
 import mysql from 'mysql2/promise';
@@ -162,6 +27,38 @@ app.get('/tarefas', async (request, reply) => {
     }
 });
 
+app.post('/tarefas', async (request, reply) => {
+    try {
+        const { descricao } = request.body as { descricao: string };
+
+        if (!descricao || descricao.trim() === "") {
+            return reply.status(400).send({ mensagem: "Descrição não pode ser vazia" });
+        }
+
+        const conn = await mysql.createConnection(config);
+        await conn.query("INSERT INTO tarefas (descricao) VALUES (?)", [descricao]);
+
+        reply.status(201).send({ mensagem: "Tarefa adicionada com sucesso!" });
+    } catch (erro: any) {
+        tratarErroMySQL(erro, reply);
+    }
+});
+
+app.delete('/tarefas/:id', async (request, reply) => {
+    try {
+        const { id } = request.params as { id: string };
+        const conn = await mysql.createConnection(config);
+        const [result] = await conn.query("DELETE FROM tarefas WHERE id = ?", [id]);
+
+        if ((result as any).affectedRows === 0) {
+            return reply.status(404).send({ mensagem: "Tarefa não encontrada" });
+        }
+
+        reply.status(200).send({ mensagem: "Tarefa excluída com sucesso" });
+    } catch (erro: any) {
+        tratarErroMySQL(erro, reply);
+    }
+});
 
 // Função para citar os erros 
 function tratarErroMySQL(erro: any, reply: any) {
